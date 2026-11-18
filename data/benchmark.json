@@ -1,0 +1,32 @@
+{
+  "platform": "Linux-7.0.0-42-generic-x86_64-with-glibc2.39",
+  "python": "3.12.3",
+  "model_id": "948fd03b36d6",
+  "model_bytes": 1492,
+  "model_load_ms_one_run": 0.104139,
+  "persistence": {
+    "n": 5000,
+    "median_ms": 0.000111,
+    "p95_ms": 0.000141,
+    "cpu_seconds": 0.0012547200000000008,
+    "wall_seconds": 0.0012540909956442192,
+    "one_core_cpu_percent": 100.05015619743435
+  },
+  "ridge_arithmetic_only": {
+    "n": 5000,
+    "median_ms": 0.000961,
+    "p95_ms": 0.001223,
+    "cpu_seconds": 0.0056898269999999945,
+    "wall_seconds": 0.005699378001736477,
+    "one_core_cpu_percent": 99.83242027930814
+  },
+  "process_peak_rss_mib": 201.90234375,
+  "last_station_run": "84e897536130",
+  "last_station_source": "simulated",
+  "local_sample_path": {
+    "n": 5,
+    "median_ms": 33.096014,
+    "p95_ms": 42.895334
+  },
+  "scope": "Model timing excludes sensor IO and training. Local sample path includes sensor read, features/inference, LED update where enabled, SQLite commit and MQTT enqueue where enabled. It excludes sample waiting, broker delivery, browser refresh and runtime CSV logging. CPU time is NOT energy; measure watts with suitable hardware."
+}
