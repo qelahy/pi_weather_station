@@ -1,13 +1,10 @@
-"""Run on the central PC. Validate, deduplicate and archive incoming readings."""
-
 import argparse
 import json
 import queue
 import time
-
 from common import load_config, project_path, validate_observation
-from mqtt_link import make_client
 from storage import Store
+from mqtt_link import make_client
 
 
 def main():
@@ -23,11 +20,9 @@ def main():
         if reason_code.is_failure:
             print("Connection rejected:", reason_code)
             return
-        for topic in (
-            f"weather/{config['station_id']}/telemetry",
-            f"weather/{config['station_id']}/history",
-            f"weather/{config['station_id']}/status",
-        ):
+        for topic in (f"weather/{config['station_id']}/telemetry",
+                      f"weather/{config['station_id']}/history",
+                      f"weather/{config['station_id']}/status"):
             client.subscribe(topic, qos=1)
         print("Connected. Waiting for stations...")
 
@@ -42,12 +37,9 @@ def main():
 
     client.on_connect = on_connect
     client.on_message = on_message
-    client.on_connect_fail = lambda client, userdata: print(
-        "Cannot reach broker; check the Pi address, broker and network settings."
-    )
+    client.on_connect_fail = lambda client, userdata: print("Cannot reach broker; check the Pi address, broker and network.")
     client.connect_async(config["broker_host"], config["broker_port"], keepalive=30)
     client.loop_start()
-
     last_purge = 0
     try:
         while True:
@@ -65,21 +57,14 @@ def main():
                 if parts[2] == "status":
                     print(parts[1], "broker status:", payload.decode("utf-8"))
                     continue
-
                 row = validate_observation(json.loads(payload.decode("utf-8")), parts[1])
                 age = time.time() - row["observed_epoch"]
                 if age < -5 or age > config["retention_days"] * 86400:
                     raise ValueError("Future-dated or beyond the archive retention period")
                 inserted = store.add(row)
                 freshness = "stale/history" if age > 15 else "recent"
-                print(
-                    row["station_id"],
-                    row["observed_at"],
-                    freshness,
-                    "saved" if inserted else "duplicate ignored",
-                    "valid:",
-                    row["valid"],
-                )
+                print(row["station_id"], row["observed_at"], freshness,
+                      "saved" if inserted else "duplicate ignored", "valid:", row["valid"])
             except (ValueError, TypeError, KeyError, UnicodeError) as exc:
                 print("Rejected message:", exc)
     except KeyboardInterrupt:

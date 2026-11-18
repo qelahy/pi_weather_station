@@ -5,14 +5,10 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
-
 MEASUREMENTS = ("temperature_c", "humidity_pct", "pressure_hpa")
-
-BOUNDS = {
-    "temperature_c": (-20, 60),
-    "humidity_pct": (0, 100),
-    "pressure_hpa": (850, 1100),
-}
+# These are deliberately broad project checks, NOT manufacturer specifications.
+BOUNDS = {"temperature_c": (-20, 60), "humidity_pct": (0, 100),
+          "pressure_hpa": (850, 1100)}
 
 
 def project_path(value):
@@ -23,7 +19,7 @@ def project_path(value):
 def load_config(filename="config.json"):
     path = project_path(filename)
     if not path.exists():
-        raise SystemExit(f"Missing {path}. Create config.json using the week 2 steps first.")
+        raise SystemExit(f"Missing {path}. Create config.json using the Week 2 steps first.")
     config = json.loads(path.read_text(encoding="utf-8"))
     if not re.fullmatch(r"[a-z][a-z0-9_-]{2,31}", config["station_id"]):
         raise SystemExit("Use a station ID such as station01: lower-case letters, digits, _ or -.")
@@ -56,7 +52,7 @@ def clean_values(values):
         value = values.get(field)
         low, high = BOUNDS[field]
         if not finite_number(value) or not low <= value <= high:
-            clean[field] = None
+            clean[field] = None  # Missing is not the same as zero.
             errors.append(f"{field}: missing or outside project bounds")
         else:
             clean[field] = float(value)
@@ -70,20 +66,14 @@ def observation(config, values, run_id, sequence, epoch, source, error=None):
         errors.append(error)
     raw_temperature = values.get("temperature_raw_c")
     return {
-        "schema_version": 1,
-        "station_id": config["station_id"],
-        "run_id": run_id,
-        "sample_id": f"{run_id}:{sequence}",
-        "observed_at": utc_string(epoch),
-        "observed_epoch": epoch,
-        "sample_interval_s": config["sample_interval_s"],
-        "source": source,
+        "schema_version": 1, "station_id": config["station_id"],
+        "run_id": run_id, "sample_id": f"{run_id}:{sequence}",
+        "observed_at": utc_string(epoch), "observed_epoch": epoch,
+        "sample_interval_s": config["sample_interval_s"], "source": source,
         "calibration_id": config["calibration_id"],
         "temperature_offset_c": config["temperature_offset_c"],
         "temperature_raw_c": raw_temperature if finite_number(raw_temperature) else None,
-        **clean,
-        "valid": not errors,
-        "errors": errors,
+        **clean, "valid": not errors, "errors": errors,
     }
 
 
@@ -119,11 +109,10 @@ def validate_observation(row, expected_station=None):
         raise ValueError("A valid observation contains invalid measurements")
     for field in MEASUREMENTS:
         if row.get(field) is not None and not finite_number(row[field]):
-            raise ValueError("Use null, not NaN, infinity or strings for a failed measurement")
+            raise ValueError("Use null, not NaN, infinity or strings, for a failed measurement")
     offset = row.get("temperature_offset_c")
     if not finite_number(offset) or abs(offset) > 10:
         raise ValueError("Invalid calibration offset")
     if not row["valid"] and not row["errors"]:
         raise ValueError("An invalid observation needs a reason")
     return row
-
